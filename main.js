@@ -1,116 +1,106 @@
-document.getElementById('check-balances').addEventListener('click', async () => {
-    const apiKey = document.getElementById('api-key').value.trim();
-    const addresses = document.getElementById('wallet-addresses').value.split('\n').slice(0, 100);
+document.addEventListener('DOMContentLoaded', () => {
+    // Обработчик нажатия на кнопку "Check Balances"
+    document.getElementById('check-balances').addEventListener('click', async () => {
+        const apiKey = document.getElementById('api-key').value.trim();
+        const addresses = document.getElementById('wallet-addresses').value.trim().split('\n').filter(Boolean);
+
+        if (!apiKey) {
+            document.getElementById('popup').style.display = 'block';
+            return;
+        }
+
+        const results = [];
+        for (const address of addresses) {
+            try {
+                const response = await fetch(`https://mainnet.helius-rpc.com/?api-key=${apiKey}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        id: 'my-id',
+                        method: 'searchAssets',
+                        params: {
+                            ownerAddress: address.trim(),
+                            tokenType: 'fungible',
+                            displayOptions: {
+                                showNativeBalance: true,
+                            },
+                        },
+                    }),
+                });
+
+                const { result } = await response.json();
+                const balance = result?.nativeBalance?.lamports || 0;
+                const price = result?.nativeBalance?.total_price || 0;
+
+                results.push({
+                    address: address.trim(),
+                    balance: balance / 1e9, // Переводим лампорты в SOL
+                    price: price,
+                });
+            } catch (error) {
+                console.error(`Error fetching data for address ${address}:`, error);
+                results.push({
+                    address: address.trim(),
+                    balance: 0,
+                    price: 0,
+                });
+            }
+        }
+
+        updateResults(results);
+    });
+
+    // Закрытие всплывающего окна с ошибкой
+    document.getElementById('close-popup').addEventListener('click', () => {
+        document.getElementById('popup').style.display = 'none';
+    });
+
+    // Открытие всплывающего окна с инструкцией по получению API ключа
+    document.getElementById('how-to-get-key').addEventListener('click', () => {
+        document.getElementById('how-to-get-key-popup').style.display = 'block';
+    });
+
+    // Закрытие всплывающего окна с инструкцией по получению API ключа
+    document.getElementById('close-how-to-get-key').addEventListener('click', () => {
+        document.getElementById('how-to-get-key-popup').style.display = 'none';
+    });
+});
+
+// Обновление результатов
+const updateResults = (results) => {
     const resultsTableBody = document.querySelector('#results-table tbody');
-    const summaryDiv = document.getElementById('summary');
-
-    if (!apiKey) {
-        showPopup();
-        return;
-    }
-
-    resultsTableBody.innerHTML = '';
-    summaryDiv.innerHTML = ''; 
+    resultsTableBody.innerHTML = ''; // Очистить предыдущие результаты
 
     let totalBalance = 0;
     let totalPrice = 0;
 
-    for (let address of addresses) {
-        address = address.trim();
-        if (address) {
-            try {
-                const result = await getAssetsWithNativeBalance(apiKey, address);
-                const lamports = (result.lamports / 1e9).toFixed(5);
-                totalBalance += parseFloat(lamports);
-                totalPrice += result.total_price;
-                const row = `<tr>
-                                <td><address>${address}</address></td>
-                                <td>${lamports} SOL</td>
-                             </tr>`;
-                resultsTableBody.innerHTML += row;
-            } catch (error) {
-                const row = `<tr>
-                                <td colspan="2">Error fetching data for address: ${address}</td>
-                             </tr>`;
-                resultsTableBody.innerHTML += row;
-            }
-        }
-    }
+    results.forEach(result => {
+        const row = document.createElement('tr');
 
-    summaryDiv.innerHTML = `<p>Total Balance: ${totalBalance.toFixed(5)} SOL</p><p>Total Price: $${totalPrice.toFixed(5)}</p>`;
-});
+        const addressCell = document.createElement('td');
+        addressCell.textContent = result.address;
+        row.appendChild(addressCell);
 
-const getAssetsWithNativeBalance = async (apiKey, address) => {
-    const url = `https://mainnet.helius-rpc.com/?api-key=${apiKey}`;
+        const balanceCell = document.createElement('td');
+        // Проверяем, если баланс существует и является числом
+        const balance = result.balance !== undefined ? parseFloat(result.balance) : 0;
+        balanceCell.textContent = `${isNaN(balance) ? '0.0000' : balance.toFixed(4)} SOL`; // Форматируем баланс
+        row.appendChild(balanceCell);
 
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            jsonrpc: '2.0',
-            id: 'my-id',
-            method: 'searchAssets',
-            params: {
-                ownerAddress: address,
-                tokenType: 'fungible',
-                displayOptions: {
-                    showNativeBalance: true,
-                },
-            },
-        }),
+        resultsTableBody.appendChild(row);
+
+        // Суммируем балансы
+        totalBalance += isNaN(balance) ? 0 : balance;
+        totalPrice += isNaN(result.price) ? 0 : result.price;
     });
 
-    const { result } = await response.json();
-    if (response.ok) {
-        return result.nativeBalance;
-    } else {
-        throw new Error(result.error.message);
-    }
+    // Обновляем итоговые значения
+    const summary = document.querySelector('#summary');
+    summary.innerHTML = `
+        <p>Total Balance: ${totalBalance.toFixed(4)} SOL</p>
+        <p>Total Price: ${totalPrice.toFixed(2)} USD</p>
+    `;
 };
-
-const showPopup = () => {
-    const popup = document.getElementById('popup');
-    popup.style.display = 'block';
-};
-
-const closePopup = () => {
-    const popup = document.getElementById('popup');
-    popup.style.display = 'none';
-};
-
-document.getElementById('close-popup').addEventListener('click', closePopup);
-window.addEventListener('click', (event) => {
-    const popup = document.getElementById('popup');
-    if (event.target == popup) {
-        popup.style.display = 'none';
-    }
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    const apiKeyLink = document.getElementById('how-to-get-key');
-    const howToGetKeyPopup = document.getElementById('how-to-get-key-popup');
-    const closeHowToGetKeyBtn = document.getElementById('close-how-to-get-key');
-    const mainPopup = document.getElementById('popup');
-    const closePopupBtn = document.getElementById('close-popup');
-
-    apiKeyLink.addEventListener('click', (event) => {
-        event.preventDefault();
-        howToGetKeyPopup.style.display = 'block';
-    });
-
-    closeHowToGetKeyBtn.addEventListener('click', () => {
-        howToGetKeyPopup.style.display = 'none';
-    });
-
-    closePopupBtn.addEventListener('click', () => {
-        mainPopup.style.display = 'none';
-    });
-
-    // Function to show the main popup
-    function showMainPopup() {
-        mainPopup.style.display = 'block';
-    }
-});
-
