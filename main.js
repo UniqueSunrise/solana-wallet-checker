@@ -85,16 +85,15 @@ const updateResults = (results) => {
         row.appendChild(addressCell);
 
         const balanceCell = document.createElement('td');
-        // Проверяем, если баланс существует и является числом
-        const balance = result.balance !== undefined ? parseFloat(result.balance) : 0;
-        balanceCell.textContent = `${isNaN(balance) ? '0.0000' : balance.toFixed(4)} SOL`; // Форматируем баланс
+        const balance = result.balance !== undefined && !isNaN(result.balance) ? parseFloat(result.balance) : 0;
+        balanceCell.textContent = `${balance.toFixed(4)} SOL`; // Форматируем баланс
         row.appendChild(balanceCell);
 
         resultsTableBody.appendChild(row);
 
         // Суммируем балансы
-        totalBalance += isNaN(balance) ? 0 : balance;
-        totalPrice += isNaN(result.price) ? 0 : result.price;
+        totalBalance += balance;
+        totalPrice += result.price !== undefined && !isNaN(result.price) ? parseFloat(result.price) : 0;
     });
 
     // Обновляем итоговые значения
