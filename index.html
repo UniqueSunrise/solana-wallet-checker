@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solana Balance Checker</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="main.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Solana Balance Checker</h1>
+        <div class="form-group">
+            <label for="api-key">API Key <a href="#" id="how-to-get-key">(how to get key?)</a>:</label>
+            <input type="text" id="api-key" placeholder="Enter your API key here">
+        </div>
+        <div class="form-group">
+            <label for="wallet-addresses">Wallet Addresses (one per line, max 100):</label>
+            <textarea id="wallet-addresses" rows="10" placeholder="Enter wallet addresses here"></textarea>
+        </div>
+        <button id="check-balances">Check Balances</button>
+        <h2>Results:</h2>
+        <div id="results">
+            <table id="results-table">
+                <thead>
+                    <tr>
+                        <th>Address</th>
+                        <th>Balance (SOL)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+        <div id="summary"></div>
+    </div>
+    <div id="popup" class="popup">
+        <div class="popup-content">
+            <span class="close-btn" id="close-popup">&times;</span>
+            <p>Please enter your API key.</p>
+        </div>
+    </div>
+    <div id="how-to-get-key-popup" class="popup">
+        <div class="popup-content">
+            <span class="close-btn" id="close-how-to-get-key">&times;</span>
+            <h2>How to Get API Key</h2>
+            <p class="api-key-link">
+                Take your personal API key here - <a href="https://dev.helius.xyz" target="_blank">dev.helius.xyz</a>.
+            </p>
+            <div class="screenshots">
+                <img src="images/screenshot1.png" alt="Screenshot 1">
+                <img src="images/screenshot2.png" alt="Screenshot 2">
+                <img src="images/screenshot3.png" alt="Screenshot 3">
+                <img src="images/screenshot4.png" alt="Screenshot 4">
+            </div>
+        </div>
+    </div>
+</body>
+</html>
