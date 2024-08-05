@@ -20,7 +20,8 @@ document.getElementById('check-balances').addEventListener('click', async () => 
         if (address) {
             try {
                 const result = await getAssetsWithNativeBalance(apiKey, address);
-                const lamports = (result.lamports / 1e9).toFixed(5);
+                let lamports = (result.lamports / 1e9).toFixed(5);
+                lamports = isNaN(lamports) ? 0 : lamports; // Если NaN, то записываем как 0
                 totalBalance += parseFloat(lamports);
                 totalPrice += result.total_price;
                 const row = `<tr>
@@ -34,6 +35,7 @@ document.getElementById('check-balances').addEventListener('click', async () => 
                              </tr>`;
                 resultsTableBody.innerHTML += row;
             }
+            await sleep(1500); // Задержка в 2 секунды между запросами
         }
     }
 
@@ -69,6 +71,9 @@ const getAssetsWithNativeBalance = async (apiKey, address) => {
         throw new Error(result.error.message);
     }
 };
+
+// Функция для создания задержки
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 const showPopup = () => {
     const popup = document.getElementById('popup');
@@ -113,4 +118,3 @@ document.addEventListener('DOMContentLoaded', () => {
         mainPopup.style.display = 'block';
     }
 });
-
